@@ -1,0 +1,25 @@
+{
+  "name": "diezz/widewail-db-seeder",
+  "authors": [
+    {
+      "name": "Stanislav Shadskiy",
+      "email": "stanislav.shadskiy@quantumsoft.ru"
+    }
+  ],
+  "require": {
+    "symfony/yaml": "^5.3",
+    "symfony/console": "^5.3",
+    "ext-pdo": "*",
+    "fzaninotto/faker": "^1.5"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest",
+    "phpunit/phpunit": "^9.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src",
+      "Test\\": "test"
+    }
+  }
+}

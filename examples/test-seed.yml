@@ -1,0 +1,45 @@
+connection:
+  driver: mysql
+  host: 192.168.0.23
+  database: widewail
+  user: widewail
+  password: widewail
+
+# This is a default value
+faker:
+  localization: en_US
+
+models:
+  - agency:
+      table: agency
+      columns:
+        id: faker::uuid
+        name: faker::company
+        support_email: faker::email
+        support_phone: faker::email
+        car_gurus_email: faker::email
+        edmunds_email: faker::email
+        yelp_email: faker::email
+
+  - customer:
+      table: customer
+      columns:
+        id: faker::uuid
+        company_name: faker::company
+        address: faker::address
+        status: faker::randomElement:['NEW', 'APPROVED']
+        created_on: $var(date)
+        last_modified_on: 'faker::date:Y-m-d H:i:s'
+        agency_id: $ref(agency.id)
+
+seed:
+  # This seed plan should create two agencies and 10 customers for each agency
+  - agency:
+      model: agency
+      count: 1
+      foreach:
+        - customers:
+            model: customer
+            count: 10
+            params:
+              agency_id: $ref(agency.id)

@@ -1,0 +1,5 @@
+db:
+  host: 192.168.0.23
+  database: widewail
+  user: widewail
+  password: widewail
