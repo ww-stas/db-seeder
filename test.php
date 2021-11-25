@@ -1,15 +1,18 @@
 <?php declare(strict_types=1);
 
+use App\Config\AppConfig;
 use App\ConfigMapper;
-use App\DbConfig;
-use App\TestConfig;
-use Symfony\Component\Yaml\Yaml;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-//print_r(Yaml::parseFile(__DIR__ . '/examples/example.yml'));
-
-
 $filename = __DIR__ . '/examples/test-seed.yml';
 
-ConfigMapper::make()->map(TestConfig::class, $filename);
+
+$config = ConfigMapper::make()->map(AppConfig::class, $filename);
+$t = 1;
+foreach ($config->models as $model) {
+    echo $model->table . ":\n";
+    foreach ($model->columns as $name => $column) {
+        echo " -  $name : {$column->resolve()}\n";
+    }
+}

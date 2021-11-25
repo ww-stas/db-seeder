@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Attributes\Collection;
 use App\Attributes\Required;
 use ReflectionClass;
 use ReflectionException;
@@ -30,23 +31,63 @@ class ClassInfo
 
             $classField->setName($propertyName);
             $classField->setRequired(self::isRequired($property));
-            $classField->setType(self::getType($property));
+            self::resolveType($property, $classField);
+            self::resolveSetter($reflection, $property, $classField);
 
             $instance->addClassField($propertyName, $classField);
         }
 
-
         return $instance;
     }
 
-    private static function getType(ReflectionProperty $reflectionProperty)
+    private static function resolveSetter(ReflectionClass $reflectionClass, ReflectionProperty $reflectionProperty, ClassField $classField): void
     {
-        $type = $reflectionProperty->getType();
-        if (!$type->isBuiltin()) {
-            $isNested = is_subclass_of($type->getName(), YamlConfigurable::class);
+        $isPublic = $reflectionProperty->isPublic();
+        $classField->setIsPublic($isPublic);
+
+        if (true === $isPublic) {
+            return;
         }
 
-        return $type->getName();
+        $possibleSetter = "set" . ucfirst($reflectionProperty->getName());
+        if (false === $reflectionClass->hasMethod($possibleSetter)) {
+            throw new \RuntimeException(sprintf(
+                "Unable to find suitable setter for property %s for class %s",
+                $reflectionProperty->getName(),
+                $reflectionClass->getName()
+            ));
+        }
+
+        $classField->setSetter($possibleSetter);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    private static function resolveType(ReflectionProperty $reflectionProperty, ClassField $classField): void
+    {
+        $type = $reflectionProperty->getType();
+        $typeName = $type->getName();
+        $isNested = false;
+        $isList = false;
+        if (!$type->isBuiltin()) {
+            $isNested = is_subclass_of($type->getName(), YamlConfigurable::class);
+        } else if ('array' === $type->getName()) {
+            $attributes = $reflectionProperty->getAttributes(Collection::class);
+            if (!empty($attributes)) {
+                $isNested = true;
+                $isList = true;
+                /** @var Collection $attribute */
+                $attribute = $attributes[0]->newInstance();
+                $typeName = $attribute->getClass();
+            }
+        }
+
+        $classField->setType($typeName);
+        $classField->setIsList($isList);
+        if ($isNested && is_subclass_of($typeName, YamlConfigurable::class)) {
+            $classField->setClassInfo(static::make($typeName));
+        }
     }
 
     /**
