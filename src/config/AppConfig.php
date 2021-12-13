@@ -8,8 +8,6 @@ use App\YamlConfigurable;
 
 class AppConfig implements YamlConfigurable
 {
-    #[Required]
-    private ConnectionConfig $connection;
     public FakerConfig $faker;
     /**
      * @var ModelConfig[]
@@ -17,6 +15,15 @@ class AppConfig implements YamlConfigurable
     #[Required]
     #[Collection(ModelConfig::class)]
     public array $models;
+    /**
+     * @var SeedConfig[]
+     */
+    #[Required]
+    #[Collection(SeedConfig::class)]
+    public array $seed;
+
+    #[Required]
+    private ConnectionConfig $connection;
 
     public function __construct()
     {
@@ -34,4 +41,14 @@ class AppConfig implements YamlConfigurable
 
         return $this;
     }
+
+    /**
+     * @return ConnectionConfig
+     */
+    public function getConnectionConfig(): ConnectionConfig
+    {
+        return $this->connection;
+    }
+
+
 }

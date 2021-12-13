@@ -17,4 +17,5 @@ class ConnectionConfig implements YamlConfigurable
     public string $user;
     #[Required]
     public string $password;
+    public ?int $port = null;
 }

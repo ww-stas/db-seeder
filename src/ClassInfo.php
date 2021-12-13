@@ -31,6 +31,7 @@ class ClassInfo
 
             $classField->setName($propertyName);
             $classField->setRequired(self::isRequired($property));
+            $classField->setHasDefaultValue($property->hasDefaultValue());
             self::resolveType($property, $classField);
             self::resolveSetter($reflection, $property, $classField);
 
@@ -38,6 +39,22 @@ class ClassInfo
         }
 
         return $instance;
+    }
+
+    private static function getNestedClassInfos(ClassInfo $classInfo): array
+    {
+        $map = [];
+
+        foreach ($classInfo->getFields() as $field) {
+            if ($field->getClassInfo() !== null) {
+                $map[$field->getType()] = $field->getClassInfo();
+                foreach (self::getNestedClassInfos($field->getClassInfo()) as $k => $f) {
+                    $map[$k] = $f;
+                }
+            }
+        }
+
+        return $map;
     }
 
     private static function resolveSetter(ReflectionClass $reflectionClass, ReflectionProperty $reflectionProperty, ClassField $classField): void
@@ -86,6 +103,11 @@ class ClassInfo
         $classField->setType($typeName);
         $classField->setIsList($isList);
         if ($isNested && is_subclass_of($typeName, YamlConfigurable::class)) {
+            if ($typeName === $reflectionProperty->class) {
+                //prevent loop on nested elements of the same type
+                //$classField->setClassInfo();
+                return;
+            }
             $classField->setClassInfo(static::make($typeName));
         }
     }
@@ -93,7 +115,8 @@ class ClassInfo
     /**
      * There are should be 3 ways how to figure out whether the field is required or not.
      * 1. Use attribute #Required. The most preferable way
-     * 2. Use property typehint e.g
+     * 2. If value has default value it means that fields isn't required
+     * 3. Use property typehint e.g
      * ```
      * private int $value
      * ```
@@ -102,7 +125,7 @@ class ClassInfo
      * private ?int $value
      * ```
      * would br treated as optional(non required) field
-     * 3. phpDoc comment. If doc comment contains `@var` type and the type contains `null|...` or `...|null' that would
+     * 4. phpDoc comment. If doc comment contains `@var` type and the type contains `null|...` or `...|null' that would
      * be treated as optional, otherwise as required.
      *
      * If all three ways doesn't give a result the field would be treated as optional.
@@ -114,6 +137,10 @@ class ClassInfo
         $attributes = $reflectionProperty->getAttributes(Required::class);
         if (!empty($attributes)) {
             return true;
+        }
+
+        if ($reflectionProperty->hasDefaultValue()) {
+            return false;
         }
 
         $propertyType = $reflectionProperty->getType();
@@ -133,6 +160,28 @@ class ClassInfo
         }
 
         return false;
+    }
+
+    private static function findUnresolved(ClassInfo $classInfo, array $map)
+    {
+        foreach ($classInfo->getFields() as $field) {
+            if ($field->getClassInfo() === null && is_subclass_of($field->getType(), YamlConfigurable::class)) {
+
+                if (!array_key_exists($field->getType(), $map)) {
+                    continue;
+                }
+
+                $field->setClassInfo($map[$field->getType()]);
+            } else if ($field->getClassInfo() !== null) {
+                self::findUnresolved($field->getClassInfo(), $map);
+            }
+        }
+    }
+
+    public function fixCircularReferences(): void
+    {
+        $map = self::getNestedClassInfos($this);
+        self::findUnresolved($this, $map);
     }
 
     /**

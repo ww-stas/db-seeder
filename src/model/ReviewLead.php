@@ -2,10 +2,10 @@
 
 namespace App\Model;
 
-use App\Model;
+use App\OldModel;
 use Faker\Generator;
 
-class ReviewLead extends Model
+class ReviewLead extends OldModel
 {
     public string $id;
 

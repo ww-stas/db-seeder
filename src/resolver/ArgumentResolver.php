@@ -68,7 +68,7 @@ abstract class ArgumentResolver
         return $this;
     }
 
-    abstract public function resolve();
+    abstract public function resolve($context = null);
 
     protected function init(): void
     {

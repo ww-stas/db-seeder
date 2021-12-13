@@ -30,6 +30,7 @@ class ConfigMapper
         $config = Yaml::parseFile($configFile);
 
         $classInfo = ClassInfo::make($targetClass);
+        $classInfo->fixCircularReferences();
         $validationResult = $this->validate($classInfo, $config);
 
         if (!$validationResult->isValid()) {
@@ -43,6 +44,10 @@ class ConfigMapper
     {
         foreach ($classInfo->getFields() as $field) {
             $fieldName = $field->getName();
+            //Skip values that doesn't exist in config file but has a default values
+            if (!array_key_exists($fieldName, $config)) {
+                continue;
+            }
             $rawValue = $config[$fieldName];
             if (!$field->isPrimitive() || $field->isArgumentResolver()) {
                 $targetClassName = $field->getType();
@@ -71,6 +76,9 @@ class ConfigMapper
     private function setValue(ClassField $field, $value, $resultInstance)
     {
         $isArgumentResolver = $field->getType() === ArgumentResolver::class;
+        if ($value === null && $field->hasDefaultValue()) {
+            return;
+        }
         if ($field->isPublic()) {
             $resultInstance->{$field->getName()} = $value;
         } else {
@@ -101,6 +109,9 @@ class ConfigMapper
 
             if (false === $field->isPrimitive()) {
                 if ($field->isList()) {
+                    if ($isRequired === false && !$isFieldExistsInConfig) {
+                        continue;
+                    }
                     foreach ($config[$fieldName] as $key => $value) {
                         $path = $pathFunction($key, $path);
                         $validationResult = self::validate($field->getClassInfo(), $value, $path, $validationResult);

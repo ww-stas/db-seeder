@@ -4,8 +4,8 @@ namespace App\Resolver;
 
 class VarArgumentResolver extends ArgumentResolver
 {
-    public function resolve()
+    public function resolve($context = null)
     {
-
+        $r = 1;
     }
 }

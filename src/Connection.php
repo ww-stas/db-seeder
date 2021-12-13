@@ -2,30 +2,56 @@
 
 namespace App;
 
+use App\Config\ConnectionConfig;
+use Doctrine\DBAL\DriverManager;
 use PDO;
 
-class Connection implements YamlConfigurable
+abstract class Connection
 {
-    private DbConfig $config;
-    private PDO $connection;
+    protected PDO $connection;
+    protected ConnectionConfig $config;
 
     /**
-     * @param DbConfig $config
+     * @param ConnectionConfig $config
      */
-    public function __construct(DbConfig $config)
+    public function __construct(ConnectionConfig $config)
     {
         $this->config = $config;
         $this->connect();
     }
+
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public static function make(ConnectionConfig $config): \Doctrine\DBAL\Connection
+    {
+        $connectionParams = [
+            'dbname' => $config->database,
+            'user' => $config->user,
+            'password' => $config->password,
+            'host' => $config->host,
+            'driver' => $config->driver,
+            'port' => $config->port
+        ];
+
+        return DriverManager::getConnection($connectionParams);
+    }
+
 
     public function getConnection(): PDO
     {
         return $this->connection;
     }
 
-    private function connect(): void
+    abstract protected function getConnectionString(): string;
+
+    protected function connect(): void
     {
-        $connectionString = 'mysql:host=' . $this->config->host . ';port=' . $this->config->port . ';dbname=' . $this->config->database;
-        $this->connection = new PDO($connectionString, $this->config->user, $this->config->password);
+        $this->connection = new PDO(
+            $this->getConnectionString(),
+            $this->config->user,
+            $this->config->password
+        );
     }
 }

@@ -2,132 +2,76 @@
 
 namespace App;
 
-use Faker\Factory;
-use Faker\Generator;
-use RuntimeException;
+use App\Config\AppConfig;
+use App\Config\ModelConfig;
+use App\Config\SeedConfig;
 
 class Seeder
 {
-    private Connection $connection;
-    private Generator $faker;
-    /**
-     * @var Model[]
-     */
-    private array $models = [];
+    private AppConfig $appConfig;
+    private ConnectionDriver $connectionDriver;
 
     /**
-     * @param Connection $connection
+     * @param AppConfig $appConfig
      */
-    public function __construct(Connection $connection)
+    public function __construct(AppConfig $appConfig)
     {
-        $this->connection = $connection;
-        $this->faker = Factory::create();
+        $this->appConfig = $appConfig;
+        $connection = Connection::make($appConfig->getConnectionConfig());
+        $this->connectionDriver = new DoctrineDriver($connection);
     }
 
-    public static function make(Connection $connection): static
+    public function run(): void
     {
-        return new static($connection);
-    }
-
-    /**
-     * @param Model[] $models
-     */
-    public function setModels(array $models): static
-    {
-        $this->models = $models;
-
-        return $this;
-    }
-
-    /**
-     * @return Model[]
-     */
-    public function getModels(): array
-    {
-        return $this->models;
-    }
-
-    public function generate(string $class, int $count, ?array $params = null): static
-    {
-        $instance = new $class;
-        if (!$instance instanceof Model) {
-            throw new RuntimeException('The class should extends from App\\Model');
+        foreach ($this->appConfig->seed as $seedConfig) {
+            $this->seed($seedConfig);
         }
+    }
 
+    private function seed(SeedConfig $seedConfig, Model $parentModel = null): void
+    {
+        $modelConfig = $this->findModelConfig($seedConfig->model);
+
+        /** @var Model[] $models */
         $models = [];
-        for ($i = 0; $i < $count; $i++) {
-            $models[] = array_merge($instance->value($this->faker), $params ?? []);
+        for ($i = 0; $i < $seedConfig->count; $i++) {
+            $models[] = $this->generateModel($modelConfig, $seedConfig, $parentModel);
         }
 
-        $this->insertMany($instance->tableName(), $models);
-
-        return (new static($this->connection))->setModels(Mapper::mapMany($models, $class));
-    }
-
-    public function forEach(callable $callback): static
-    {
-        foreach ($this->models as $model) {
-            $callback($this, $model);
-        }
-
-        return $this;
-    }
-
-    private function insertMany(string $table, array $records): void
-    {
-        $chunks = array_chunk($records, 100);
-        if (empty($chunks)) {
-            return;
-        }
-        $pdo = $this->connection->getConnection();
-        $fields = array_keys($chunks[0][0]);
-
-        foreach ($chunks as $chunk) {
-            $query = $this->prepareQuery($table, $fields, $chunk);
-            $stmt = $pdo->prepare($query);
-            $stmt->execute($this->prepareValues($chunk));
-        }
-    }
-
-    private function prepareValues(array $chunk): array
-    {
-        $values = [];
-        foreach ($chunk as $row) {
-            foreach ($row as $value) {
-                $values[] = $value;
-            }
-        }
-
-        return $values;
-    }
-
-    private function prepareQuery(string $table, array $fields, array $values): string
-    {
-        $countOfValues = count($fields);
-        $val = '';
-        for ($i = 0, $count = count($values); $i < $count; $i++) {
-            $val .= '(';
-            for ($j = 0; $j < $countOfValues; $j++) {
-                $val .= '?';
-                if ($j < $countOfValues - 1) {
-                    $val .= ',';
+        $this->connectionDriver->insertMany($modelConfig->table, $models);
+        if ($seedConfig->foreach !== null) {
+            foreach ($models as $model) {
+                foreach ($seedConfig->foreach as $nestedSeedConfig) {
+                    $this->seed($nestedSeedConfig, $model);
                 }
             }
-            $val .= ')';
-            if ($i < $count - 1) {
-                $val .= ',';
+        }
+    }
+
+    private function generateModel(ModelConfig $modelConfig, SeedConfig $seedConfig, Model $parentModel = null): Model
+    {
+        $fields = [];
+        foreach ($modelConfig->columns as $name => $column) {
+            $fields[$name] = $column->resolve($parentModel);
+        }
+
+        if ($parentModel !== null && !empty($seedConfig->params)) {
+            foreach ($seedConfig->params as $name => $param) {
+                $fields[$name] = $param->resolve($parentModel);
             }
         }
 
-        return sprintf('insert into %s (%s) values %s',
-            $table,
-            implode(',', $fields),
-            $val
-        );
+        return new Model($modelConfig->table, $fields);
     }
 
-    private function formatFields(array $values): string
+    private function findModelConfig(string $modelName): ModelConfig
     {
-        return sprintf('(%s)', implode(',', $values));
+        foreach ($this->appConfig->models as $model) {
+            if ($model->table === $modelName) {
+                return $model;
+            }
+        }
+
+        throw new \RuntimeException("Model $modelName doesn't exist. Check configuration file");
     }
 }

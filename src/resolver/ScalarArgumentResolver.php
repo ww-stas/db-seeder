@@ -4,7 +4,7 @@ namespace App\Resolver;
 
 class ScalarArgumentResolver extends ArgumentResolver
 {
-    public function resolve()
+    public function resolve($context = null)
     {
         return $this->method;
     }

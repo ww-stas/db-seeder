@@ -2,10 +2,10 @@
 
 namespace App\Model;
 
-use App\Model;
+use App\OldModel;
 use Faker\Generator;
 
-class Agency extends Model
+class Agency extends OldModel
 {
     public string $id;
 

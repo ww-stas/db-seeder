@@ -2,11 +2,34 @@
 
 namespace App;
 
-use Faker\Generator;
-
-abstract class Model
+class Model
 {
-    abstract public function value(Generator $faker): array;
+    private string $modelName;
+    private array $fields;
 
-    abstract public function tableName(): string;
+    /**
+     * @param string $modelName
+     * @param array  $fields
+     */
+    public function __construct(string $modelName, array $fields)
+    {
+        $this->modelName = $modelName;
+        $this->fields = $fields;
+    }
+
+    /**
+     * @return string
+     */
+    public function getModelName(): string
+    {
+        return $this->modelName;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFields(): array
+    {
+        return $this->fields;
+    }
 }

@@ -11,7 +11,7 @@ class FakerArgumentResolver extends ArgumentResolver
 {
     private Generator $faker;
 
-    public function resolve()
+    public function resolve($context = null)
     {
         $callable = [$this->faker, $this->method];
         if (null === $this->argument) {
@@ -28,6 +28,7 @@ class FakerArgumentResolver extends ArgumentResolver
 
     protected function init(): void
     {
+        //TODO
         parent::init();
         $this->faker = Factory::create();//$this->appConfig->faker->localization);
     }

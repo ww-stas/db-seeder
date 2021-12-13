@@ -24,7 +24,4 @@ class ConfigValidationResult
     {
         return $this->errors;
     }
-
-
-
 }

@@ -15,6 +15,7 @@ class ClassField
     private string $setter;
     private bool $isPublic = true;
     private string $constructor = Constructor::DEFAULT_EMPTY;
+    private bool $hasDefaultValue = false;
 
     /**
      * @return string
@@ -172,17 +173,6 @@ class ClassField
     }
 
     /**
-     * @param string $name
-     * @param bool   $required
-     */
-//    public function __construct(string $name, bool $required)
-//    {
-//        $this->name = $name;
-//        $this->required = $required;
-//    }
-
-
-    /**
      * @return string
      */
     public function getName(): string
@@ -196,6 +186,26 @@ class ClassField
     public function isRequired(): bool
     {
         return $this->required;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasDefaultValue(): bool
+    {
+        return $this->hasDefaultValue;
+    }
+
+    /**
+     * @param bool $hasDefaultValue
+     *
+     * @return ClassField
+     */
+    public function setHasDefaultValue(bool $hasDefaultValue): ClassField
+    {
+        $this->hasDefaultValue = $hasDefaultValue;
+
+        return $this;
     }
 
     public function newInstance($value = null): object

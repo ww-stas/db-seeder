@@ -11,7 +11,8 @@
     "symfony/yaml": "^5.3",
     "symfony/console": "^5.3",
     "ext-pdo": "*",
-    "fzaninotto/faker": "^1.5"
+    "fzaninotto/faker": "^1.5",
+    "doctrine/dbal": "^3.2.0"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
