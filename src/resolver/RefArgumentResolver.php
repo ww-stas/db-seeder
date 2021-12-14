@@ -12,7 +12,7 @@ class RefArgumentResolver extends ArgumentResolver
      *
      * @return string
      */
-    public function resolve($context = null)
+    protected function doResolve($context = null)
     {
         [$modelName, $fieldName] = explode(".", $this->method);
         if (!$context instanceof Model) {

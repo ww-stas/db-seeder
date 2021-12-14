@@ -9,14 +9,20 @@ class FakerArgumentResolver extends ArgumentResolver
 {
     private Generator $faker;
 
-    public function resolve($context = null)
+    protected function doResolve($context = null)
     {
         $callable = [$this->faker, $this->method];
         if (null === $this->argument) {
             return $callable();
         }
 
-        return $callable($this->argument);
+        if (!is_array($this->argument)) {
+            $argument = [$this->argument];
+        } else {
+            $argument = $this->argument;
+        }
+
+        return call_user_func_array($callable, $argument);
     }
 
     public function getName(): string

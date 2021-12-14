@@ -73,9 +73,8 @@ class ConfigMapper
         return $resultInstance;
     }
 
-    private function setValue(ClassField $field, $value, $resultInstance)
+    private function setValue(ClassField $field, $value, $resultInstance): void
     {
-        $isArgumentResolver = $field->getType() === ArgumentResolver::class;
         if ($value === null && $field->hasDefaultValue()) {
             return;
         }
@@ -86,14 +85,13 @@ class ConfigMapper
         }
     }
 
-
     private function validate(ClassInfo $classInfo, array $config, ?string $parent = null, ?ConfigValidationResult $validationResult = null): ConfigValidationResult
     {
         if (null === $validationResult) {
             $validationResult = new ConfigValidationResult();
         }
 
-        $pathFunction = fn($key, ?string $parent = null) => null === $parent ? $key : "$parent.$key";
+        $pathFunction = static fn($key, ?string $parent = null) => null === $parent ? $key : "$parent.$key";
 
         //Check for required fields
         foreach ($classInfo->getFields() as $field) {
@@ -122,17 +120,6 @@ class ConfigMapper
             }
         }
 
-        //Check for unknown fields
-//        foreach ($config as $key => $value) {
-//            $field = $classInfo->getClassField($key);
-//            $path = $pathFunction($key, $parent);
-//            if (null === $field) {
-//                $validationResult->addError($path, sprintf("Unknown config path '%s'", $path));
-//            }
-//        }
-
         return $validationResult;
     }
-
-
 }

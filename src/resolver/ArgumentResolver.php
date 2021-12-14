@@ -7,21 +7,36 @@ use App\Config\AppConfig;
 abstract class ArgumentResolver
 {
     protected string $method;
-    protected $argument;
+    protected mixed $argument;
     protected AppConfig $appConfig;
+    protected ?ArgumentResolver $after = null;
 
     /**
-     * @param string $method
-     * @param string $argument
+     * @param string     $method
+     * @param mixed|null $argument
      */
-    final public function __construct(string $method, $argument = null)
+    final public function __construct(string $method, mixed $argument = null)
     {
         $this->method = $method;
         $this->argument = $argument;
+        $this->init();
     }
 
     public static function make(string $value): static
     {
+        if (preg_match('/\|/', $value)) {
+            $values = explode("|", $value);
+            $resolvers = [];
+            foreach ($values as $val) {
+                $resolvers[] = static::make($val);
+            }
+            for ($i = count($resolvers) - 1; $i > 0; $i--) {
+                $resolvers[$i - 1]->setAfter($resolvers[$i]);
+            }
+
+            return $resolvers[0];
+        }
+
         if (!preg_match('/\$?\w+::\w+(::\w+)?/', $value)) {
             return new ScalarArgumentResolver($value);
         }
@@ -29,6 +44,10 @@ abstract class ArgumentResolver
         $result = explode("::", $value);
         if (count($result) === 3) {
             [$provider, $method, $argument] = $result;
+        } else if (count($result) > 3) {
+            $provider = array_shift($result);
+            $method = array_shift($result);
+            $argument = $result;
         } else {
             [$provider, $method] = $result;
             $argument = null;
@@ -37,8 +56,8 @@ abstract class ArgumentResolver
         if (preg_match('/\$([a-z]+)/i', $provider, $matches)) {
             $provider = $matches[1];
         }
-        if (null !== $argument && preg_match('/\[((.+),?)+]/', $argument, $matches)) {
-            $argument = array_map(fn($item) => trim($item), explode(',', $matches[1]));
+        if (is_string($argument) && preg_match('/\[((.+),?)+]/', $argument, $matches)) {
+            $argument = [array_map(static fn($item) => trim($item), explode(',', $matches[1]))];
         }
 
         $providerClass = 'App\\Resolver\\' . ucfirst($provider) . "ArgumentResolver";
@@ -50,10 +69,7 @@ abstract class ArgumentResolver
         }
 
         /** @var  ArgumentResolver $instance */
-        $instance = new $providerClass($method, $argument);
-        $instance->init();
-
-        return $instance;
+        return new $providerClass($method, $argument);
     }
 
     /**
@@ -68,7 +84,50 @@ abstract class ArgumentResolver
         return $this;
     }
 
-    abstract public function resolve($context = null);
+    /**
+     * @param ArgumentResolver|null $after
+     *
+     * @return ArgumentResolver
+     */
+    public function setAfter(?ArgumentResolver $after): ArgumentResolver
+    {
+        $this->after = $after;
+
+        return $this;
+    }
+
+    public function resolve($context = null): mixed
+    {
+        $result = $this->doResolve($context);
+        if ($this->after !== null) {
+            return $this->after->resolve($result);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMethod(): string
+    {
+        return $this->method;
+    }
+
+    public function getArgument(): mixed
+    {
+        return $this->argument;
+    }
+
+    /**
+     * @return ArgumentResolver|null
+     */
+    public function getAfter(): ?ArgumentResolver
+    {
+        return $this->after;
+    }
+
+    abstract protected function doResolve($context = null);
 
     protected function init(): void
     {

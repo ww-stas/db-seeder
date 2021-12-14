@@ -3,6 +3,7 @@
 use App\Config\AppConfig;
 use App\ConfigMapper;
 use App\Seeder;
+use Faker\Factory;
 
 require_once __DIR__ . '/vendor/autoload.php';
 

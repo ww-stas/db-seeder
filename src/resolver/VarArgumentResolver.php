@@ -4,7 +4,7 @@ namespace App\Resolver;
 
 class VarArgumentResolver extends ArgumentResolver
 {
-    public function resolve($context = null)
+    protected function doResolve($context = null)
     {
         return VarArgumentResolverConfig::make()->findAndResolve($this->method, $this->argument);
     }
