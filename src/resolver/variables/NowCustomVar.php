@@ -14,7 +14,7 @@ class NowCustomVar extends CustomVariable
         return 'now';
     }
 
-    public function resolve(string $argument)
+    public function resolve(string $argument): string
     {
         return (new DateTime())->format($argument);
     }
