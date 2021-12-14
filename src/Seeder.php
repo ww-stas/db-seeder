@@ -35,7 +35,11 @@ class Seeder
         /** @var Model[] $models */
         $models = [];
         for ($i = 0; $i < $seedConfig->count; $i++) {
-            $models[] = $this->generateModel($modelConfig, $seedConfig, $parentModel);
+            $model = $this->generateModel($modelConfig, $seedConfig, $parentModel);
+            if ($parentModel !== null) {
+                $model->setParent($parentModel);
+            }
+            $models[] = $model;
         }
 
         $this->connectionDriver->insertMany($modelConfig->table, $models);

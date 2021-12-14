@@ -6,6 +6,7 @@ class Model
 {
     private string $modelName;
     private array $fields;
+    private ?Model $parent = null;
 
     /**
      * @param string $modelName
@@ -31,5 +32,25 @@ class Model
     public function getFields(): array
     {
         return $this->fields;
+    }
+
+    /**
+     * @return Model|null
+     */
+    public function getParent(): ?Model
+    {
+        return $this->parent;
+    }
+
+    /**
+     * @param Model|null $parent
+     *
+     * @return Model
+     */
+    public function setParent(?Model $parent): Model
+    {
+        $this->parent = $parent;
+
+        return $this;
     }
 }

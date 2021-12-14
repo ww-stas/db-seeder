@@ -36,9 +36,9 @@ models:
 seed:
   # This seed plan should create two agencies and 10 customers for each agency
   - model: agency
-    count: 10
+    count: 2
     foreach:
       - model: customer
-        count: 100
+        count: 10
         params:
           agency_id: $ref::agency.id
