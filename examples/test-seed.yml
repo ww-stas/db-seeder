@@ -28,15 +28,17 @@ models:
       address: faker::address
       status: faker::randomElement::[NEW, APPROVED]
       created_on: $var::now::Y-m-d H:i:s
+      created_by: db-seeder
       last_modified_on: faker::date::Y-m-d H:i:s
+      last_modified_by: db-seeder
       agency_id: $ref::agency.id
 
 seed:
   # This seed plan should create two agencies and 10 customers for each agency
   - model: agency
-    count: 2
+    count: 10
     foreach:
       - model: customer
-        count: 10
+        count: 100
         params:
           agency_id: $ref::agency.id

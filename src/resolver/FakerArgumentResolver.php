@@ -2,11 +2,9 @@
 
 namespace App\Resolver;
 
-use App\Attributes\Component;
 use Faker\Factory;
 use Faker\Generator;
 
-#[Component]
 class FakerArgumentResolver extends ArgumentResolver
 {
     private Generator $faker;

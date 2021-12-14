@@ -6,6 +6,6 @@ class VarArgumentResolver extends ArgumentResolver
 {
     public function resolve($context = null)
     {
-        $r = 1;
+        return VarArgumentResolverConfig::make()->findAndResolve($this->method, $this->argument);
     }
 }
