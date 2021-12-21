@@ -6,24 +6,30 @@ use App\Config\AppConfig;
 
 abstract class ArgumentResolver
 {
-    protected string $method;
+    protected mixed $method;
     protected mixed $argument;
     protected AppConfig $appConfig;
     protected ?ArgumentResolver $after = null;
+
+    public const ARRAY_NOTATION = '/\[((.+),?)+]/';
 
     /**
      * @param string     $method
      * @param mixed|null $argument
      */
-    final public function __construct(string $method, mixed $argument = null)
+    public function __construct(mixed $method, mixed $argument = null)
     {
         $this->method = $method;
         $this->argument = $argument;
         $this->init();
     }
 
-    public static function make(string $value): static
+    public static function make(mixed $value): static
     {
+        if (is_bool($value) || is_int($value)) {
+            return new ScalarArgumentResolver($value);
+        }
+
         if (preg_match('/\|/', $value)) {
             $values = explode("|", $value);
             $resolvers = [];
@@ -37,7 +43,7 @@ abstract class ArgumentResolver
             return $resolvers[0];
         }
 
-        if (!preg_match('/\$?\w+::\w+(::\w+)?/', $value)) {
+        if (!preg_match('/\$?\w+::.+(::.+)?/', $value)) {
             return new ScalarArgumentResolver($value);
         }
 
@@ -56,8 +62,11 @@ abstract class ArgumentResolver
         if (preg_match('/\$([a-z]+)/i', $provider, $matches)) {
             $provider = $matches[1];
         }
-        if (is_string($argument) && preg_match('/\[((.+),?)+]/', $argument, $matches)) {
+        if (is_string($argument) && preg_match(self::ARRAY_NOTATION, $argument, $matches)) {
             $argument = [array_map(static fn($item) => trim($item), explode(',', $matches[1]))];
+        }
+        if (is_string($method) && preg_match(self::ARRAY_NOTATION, $method, $matches)) {
+            $method = array_map(static fn($item) => trim($item), explode(',', $matches[1]));
         }
 
         $providerClass = 'App\\Resolver\\' . ucfirst($provider) . "ArgumentResolver";
@@ -109,7 +118,7 @@ abstract class ArgumentResolver
     /**
      * @return string
      */
-    public function getMethod(): string
+    public function getMethod(): mixed
     {
         return $this->method;
     }

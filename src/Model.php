@@ -53,4 +53,14 @@ class Model
 
         return $this;
     }
+
+    public function __toString(): string
+    {
+        $output = $this->modelName . '(';
+        foreach ($this->fields as $field => $value) {
+            $output .= "$field='$value', ";
+        }
+
+        return rtrim($output, ", ") . ");";
+    }
 }

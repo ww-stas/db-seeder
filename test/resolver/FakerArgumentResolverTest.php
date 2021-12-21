@@ -3,7 +3,7 @@
 namespace App\Resolver;
 
 use PHPUnit\Framework\TestCase;
-§
+
 class FakerArgumentResolverTest extends TestCase
 {
     public function test01ArrayArgument(): void

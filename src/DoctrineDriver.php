@@ -15,11 +15,14 @@ class DoctrineDriver implements ConnectionDriver
     }
 
     /**
+     * @param Model[] $models
+     *
      * @throws \Doctrine\DBAL\Exception
      */
-    public function insertMany(string $table, array $records): void
+    public function insertMany(array $models): void
     {
-        $chunks = array_chunk($records, 100);
+        $table = $models[0]->getModelName();
+        $chunks = array_chunk($models, 100);
         if (empty($chunks)) {
             return;
         }
@@ -32,6 +35,11 @@ class DoctrineDriver implements ConnectionDriver
             $query = 'INSERT INTO ' . $table . ' (' . implode(', ', $columns) . ')' . ' VALUES ' . $valuesPlaceholder;
             $this->connection->executeStatement($query, $this->flatMap($chunk));
         }
+    }
+
+    public function selectRandom(string $model): array
+    {
+        return [];
     }
 
     /**

@@ -86,4 +86,38 @@ class ArgumentResolverFactoryTest extends TestCase
         self::assertEquals('Y-m-d H:i:s', $after->getMethod());
         self::assertEquals(null, $after->getArgument());
     }
+
+    public function test10ShouldCreateOneOfResolver(): void
+    {
+        $result = ArgumentResolver::make('oneOf::[google, facebook, yelp, instagram]::id');
+
+        self::assertInstanceOf(OneOfArgumentResolver::class, $result);
+        self::assertEquals(['google', 'facebook', 'yelp', 'instagram'], $result->getMethod());
+//        self::assertEquals('[google, facebook, yelp, instagram]', $result->getMethod());
+        self::assertEquals('id', $result->getArgument());
+    }
+
+    public function test11ShouldReturnScalarArgumentResolverForIntValue(): void
+    {
+        $result = ArgumentResolver::make(1);
+
+        self::assertInstanceOf(ScalarArgumentResolver::class, $result);
+        self::assertEquals(1, $result->getMethod());
+    }
+
+    public function test12ShouldReturnScalarArgumentResolverForBooleanValue(): void
+    {
+        $result = ArgumentResolver::make(false);
+
+        self::assertInstanceOf(ScalarArgumentResolver::class, $result);
+        self::assertEquals(false, $result->getMethod());
+    }
+
+    public function test13ShouldReturnScalarArgumentResolverForStringValue(): void
+    {
+        $result = ArgumentResolver::make('1');
+
+        self::assertInstanceOf(ScalarArgumentResolver::class, $result);
+        self::assertEquals('1', $result->getMethod());
+    }
 }

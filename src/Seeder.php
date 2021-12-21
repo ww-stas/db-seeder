@@ -5,20 +5,21 @@ namespace App;
 use App\Config\AppConfig;
 use App\Config\ModelConfig;
 use App\Config\SeedConfig;
+use Doctrine\DBAL\Connection;
 
 class Seeder
 {
     private AppConfig $appConfig;
-    private ConnectionDriver $connectionDriver;
+    private Connection $connection;
 
     /**
-     * @param AppConfig $appConfig
+     * @param AppConfig        $appConfig
+     * @param Connection $connection
      */
-    public function __construct(AppConfig $appConfig)
+    public function __construct(AppConfig $appConfig, Connection $connection)
     {
         $this->appConfig = $appConfig;
-        $connection = Connection::make($appConfig->getConnectionConfig());
-        $this->connectionDriver = new DoctrineDriver($connection);
+        $this->connection = $connection;
     }
 
     public function run(): void
@@ -28,21 +29,18 @@ class Seeder
         }
     }
 
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
     private function seed(SeedConfig $seedConfig, Model $parentModel = null): void
     {
         $modelConfig = $this->findModelConfig($seedConfig->model);
 
-        /** @var Model[] $models */
-        $models = [];
-        for ($i = 0; $i < $seedConfig->count; $i++) {
-            $model = $this->generateModel($modelConfig, $seedConfig, $parentModel);
-            if ($parentModel !== null) {
-                $model->setParent($parentModel);
-            }
-            $models[] = $model;
-        }
+        $generator = new ModelGenerator($modelConfig);
+        $models = $generator->generateMany($seedConfig->count, $seedConfig->params, $parentModel);
 
-        $this->connectionDriver->insertMany($modelConfig->table, $models);
+        $this->connectionDriver->insertMany($models);
+
         if ($seedConfig->foreach !== null) {
             foreach ($models as $model) {
                 foreach ($seedConfig->foreach as $nestedSeedConfig) {
@@ -50,22 +48,6 @@ class Seeder
                 }
             }
         }
-    }
-
-    private function generateModel(ModelConfig $modelConfig, SeedConfig $seedConfig, Model $parentModel = null): Model
-    {
-        $fields = [];
-        foreach ($modelConfig->columns as $name => $column) {
-            $fields[$name] = $column->resolve($parentModel);
-        }
-
-        if ($parentModel !== null && !empty($seedConfig->params)) {
-            foreach ($seedConfig->params as $name => $param) {
-                $fields[$name] = $param->resolve($parentModel);
-            }
-        }
-
-        return new Model($modelConfig->table, $fields);
     }
 
     private function findModelConfig(string $modelName): ModelConfig

@@ -19,15 +19,30 @@ class ConfigMapper
      *
      * @param class-string<T> $targetClass
      *
+     * @return T
+     *
+     * @throws ReflectionException
+     * @throws ValidationException
+     */
+    public function mapFromFile(string $targetClass, string $configFile): YamlConfigurable
+    {
+        $config = Yaml::parseFile($configFile);
+        return $this->map($targetClass, $config);
+    }
+
+    /**
+     * @template T
+     *
+     * @param class-string<T> $targetClass
+     *
      * @throws ValidationException
      * @throws ReflectionException
      *
      * @return T
      */
-    public function map(string $targetClass, string $configFile): YamlConfigurable
+    public function map(string $targetClass, array $config): YamlConfigurable
     {
         $instance = new $targetClass;
-        $config = Yaml::parseFile($configFile);
 
         $classInfo = ClassInfo::make($targetClass);
         $classInfo->fixCircularReferences();

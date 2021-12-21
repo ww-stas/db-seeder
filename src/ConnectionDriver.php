@@ -4,5 +4,10 @@ namespace App;
 
 interface ConnectionDriver
 {
-    public function insertMany(string $table, array $records): void;
+    /**
+     * @param Model[] $models
+     */
+    public function insertMany(array $models): void;
+
+    public function selectRandom(string $model): array;
 }
