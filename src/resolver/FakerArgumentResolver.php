@@ -2,16 +2,17 @@
 
 namespace App\Resolver;
 
-use Faker\Factory;
-use Faker\Generator;
+use App\Context\ContextAware;
+use App\Context\ContextAwareInterface;
+use App\Metric;
 
-class FakerArgumentResolver extends ArgumentResolver
+class FakerArgumentResolver extends ArgumentResolver implements ContextAwareInterface
 {
-    private Generator $faker;
+    use ContextAware;
 
     protected function doResolve($context = null)
     {
-        $callable = [$this->faker, $this->method];
+        $callable = [$this->appContext->getFaker(), $this->method];
         if (null === $this->argument) {
             return $callable();
         }
@@ -23,17 +24,5 @@ class FakerArgumentResolver extends ArgumentResolver
         }
 
         return call_user_func_array($callable, $argument);
-    }
-
-    public function getName(): string
-    {
-        return 'faker';
-    }
-
-    protected function init(): void
-    {
-        //TODO
-        parent::init();
-        $this->faker = Factory::create();//$this->appConfig->faker->localization);
     }
 }

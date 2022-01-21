@@ -50,5 +50,27 @@ class AppConfig implements YamlConfigurable
         return $this->connection;
     }
 
+    /**
+     * Checks whether the given model name exists in the config.
+     *
+     * @param string $modelName
+     *
+     * @return bool
+     */
+    public function modelExist(string $modelName): bool
+    {
+        $modelNames = array_map(static fn(ModelConfig $model) => $model->table, $this->models);
 
+        return in_array($modelName, $modelNames, true);
+    }
+
+    public function findModelConfig(string $modelName): ?ModelConfig {
+        foreach ($this->models as $modelConfig) {
+            if ($modelConfig->table === $modelName) {
+                return $modelConfig;
+            }
+        }
+
+        return null;
+    }
 }

@@ -3,15 +3,15 @@
 namespace App\Resolver;
 
 use App\Config\AppConfig;
+use App\Metric;
 
 abstract class ArgumentResolver
 {
+    public const ARRAY_NOTATION = '/\[((.+),?)+]/';
     protected mixed $method;
     protected mixed $argument;
     protected AppConfig $appConfig;
     protected ?ArgumentResolver $after = null;
-
-    public const ARRAY_NOTATION = '/\[((.+),?)+]/';
 
     /**
      * @param string     $method
@@ -21,7 +21,6 @@ abstract class ArgumentResolver
     {
         $this->method = $method;
         $this->argument = $argument;
-        $this->init();
     }
 
     public static function make(mixed $value): static
@@ -107,7 +106,10 @@ abstract class ArgumentResolver
 
     public function resolve($context = null): mixed
     {
+        $name = get_class($this);
+        Metric::start($name);
         $result = $this->doResolve($context);
+        Metric::stop($name);
         if ($this->after !== null) {
             return $this->after->resolve($result);
         }
@@ -137,8 +139,4 @@ abstract class ArgumentResolver
     }
 
     abstract protected function doResolve($context = null);
-
-    protected function init(): void
-    {
-    }
 }

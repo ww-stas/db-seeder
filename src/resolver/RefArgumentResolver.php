@@ -2,11 +2,26 @@
 
 namespace App\Resolver;
 
+use App\Context\Dependent;
 use App\Model;
 use RuntimeException;
 
-class RefArgumentResolver extends ArgumentResolver
+class RefArgumentResolver extends ArgumentResolver implements Dependent
 {
+    public function getTables(): array
+    {
+        [$tableName,] = explode(".", $this->method);
+
+        return [$tableName];
+    }
+
+    public function getFieldName(): string
+    {
+        [, $fieldName] = explode(".", $this->method);
+
+        return $fieldName;
+    }
+
     /**
      * @param Model $context
      *

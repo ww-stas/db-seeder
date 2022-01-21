@@ -19,15 +19,14 @@ class ModelGenerator
     public function generate(array $params = [], ?Model $parentModel = null): Model
     {
         $fields = [];
-        foreach ($this->modelConfig->columns as $name => $column) {
+        $columns = array_merge($this->modelConfig->columns, $params);
+        foreach ($columns as $name => $column) {
             $fields[$name] = $column->resolve($parentModel);
         }
 
-        if ($parentModel !== null && !empty($params)) {
-            foreach ($params as $name => $param) {
-                $fields[$name] = $param->resolve($parentModel);
-            }
-        }
+//        foreach ($params as $name => $param) {
+//            $fields[$name] = $param->resolve($parentModel);
+//        }
 
         $model = new Model($this->modelConfig->table, $fields);
         if ($parentModel !== null) {

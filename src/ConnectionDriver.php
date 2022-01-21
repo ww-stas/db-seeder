@@ -2,6 +2,8 @@
 
 namespace App;
 
+use App\Config\ModelConfig;
+
 interface ConnectionDriver
 {
     /**
@@ -9,5 +11,7 @@ interface ConnectionDriver
      */
     public function insertMany(array $models): void;
 
-    public function selectRandom(string $model): array;
+    public function select(ModelConfig $model, array $condition): array;
+
+    public function isTableExists(string $table): bool;
 }

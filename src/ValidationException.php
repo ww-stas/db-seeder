@@ -2,7 +2,7 @@
 
 namespace App;
 
-class ValidationException extends \Exception
+class ValidationException extends AppException
 {
     private ConfigValidationResult $result;
 
@@ -30,5 +30,8 @@ class ValidationException extends \Exception
         return $output;
     }
 
-
+    public function getErrorMessage(): string
+    {
+        return (string)$this;
+    }
 }
