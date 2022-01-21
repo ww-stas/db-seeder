@@ -3,6 +3,8 @@
 namespace App\Command;
 
 use App\Application;
+use App\Console;
+use App\Counter;
 use App\Metric;
 use App\ValidationException;
 use Doctrine\DBAL\Exception;
@@ -30,6 +32,8 @@ abstract class AppCommand extends Command
             return Command::FAILURE;
         }
 
+        Console::init($output);
+        Counter::getInstance()->setOutput($output);
         $app = new Application($filename);
         $this->runMethod($app);
         Metric::print($output);

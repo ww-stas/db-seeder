@@ -26,9 +26,9 @@ class Seeder
         foreach ($this->appConfig->seed as $seedConfig) {
             $count += $this->calc($seedConfig);
         }
-        Counter::getInstance()->setTotal($count);
 
-        echo "Going to insert $count rows\n";
+        Console::message("Going to insert $count rows");
+        Counter::getInstance()->setTotal($count);
 
         foreach ($this->appConfig->seed as $seedConfig) {
             $this->wrapSeed($seedConfig);

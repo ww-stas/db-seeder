@@ -43,9 +43,9 @@ class Application
     {
         $testDriver = new TestDriver();
         $this->runSeed($testDriver);
-        echo "Execution plan is: \n";
+        Console::message("Execution plan is:");
         foreach ($testDriver->getInserts() as $table => $insert) {
-            echo " -$table - $insert \n";
+            Console::message(" -$table - $insert");
         }
     }
 
@@ -66,7 +66,7 @@ class Application
         }
 
         if ($exception instanceof AppException) {
-            echo $exception->getErrorMessage();
+            Console::message($exception->getErrorMessage());
             exit(1);
         }
 

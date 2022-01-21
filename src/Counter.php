@@ -2,12 +2,14 @@
 
 namespace App;
 
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Output\OutputInterface;
+
 class Counter
 {
     private static ?Counter $instance = null;
-    private int $total;
-    private int $current = 0;
-
+    private ProgressBar $progressBar;
+    private OutputInterface $output;
 
     private function __construct()
     {
@@ -23,21 +25,33 @@ class Counter
     }
 
     /**
+     * @param OutputInterface $output
+     *
+     * @return Counter
+     */
+    public function setOutput(OutputInterface $output): Counter
+    {
+        $this->output = $output;
+
+        return $this;
+    }
+
+
+    /**
      * @param int $total
      *
      * @return Counter
      */
     public function setTotal(int $total): Counter
     {
-        $this->total = $total;
+        $this->progressBar = new ProgressBar($this->output, $total);
+        $this->progressBar->start();
 
         return $this;
     }
 
-    public function update(int $count)
+    public function update(int $count): void
     {
-        $this->current += $count;
-        $percent = (int)(($this->current / $this->total) * 100);
-        echo "\r $this->current / $this->total ($percent%)";
+        $this->progressBar->advance($count);
     }
 }

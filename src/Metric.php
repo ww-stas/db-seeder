@@ -2,6 +2,7 @@
 
 namespace App;
 
+use JetBrains\PhpStorm\Pure;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -27,9 +28,8 @@ class Metric
         array_values($items)[0]->stop();
     }
 
-    public static function summary(): array
+    #[Pure] public static function summary(): array
     {
-        echo "\n";
         $result = [];
         $precision = 2;
         /**
@@ -60,7 +60,8 @@ class Metric
     public static function print(OutputInterface $output): void
     {
         $summary = self::summary();
-        usort($summary, fn($a, $b) => $b['count'] <=> $a['count']);
+        usort($summary, static fn($a, $b) => $b['count'] <=> $a['count']);
+        Console::message("");
         $table = new Table($output);
         $table
             ->setHeaders(['Task', 'Avg. execution time', 'Summary execution time ', 'Count of executions'])
