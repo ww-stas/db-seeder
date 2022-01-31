@@ -24,6 +24,7 @@ abstract class AppCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        Metric::start("App");
         $filename = $input->getArgument('filename');
 
         if (!file_exists($filename)) {
@@ -36,6 +37,7 @@ abstract class AppCommand extends Command
         Counter::getInstance()->setOutput($output);
         $app = new Application($filename);
         $this->runMethod($app);
+        Metric::stop("App");
         Metric::print($output);
 
         return Command::SUCCESS;

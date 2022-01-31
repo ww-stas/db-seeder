@@ -36,7 +36,6 @@ class Counter
         return $this;
     }
 
-
     /**
      * @param int $total
      *

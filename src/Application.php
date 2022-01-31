@@ -43,6 +43,7 @@ class Application
     {
         $testDriver = new TestDriver();
         $this->runSeed($testDriver);
+        Console::message("");
         Console::message("Execution plan is:");
         foreach ($testDriver->getInserts() as $table => $insert) {
             Console::message(" -$table - $insert");

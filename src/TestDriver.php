@@ -23,6 +23,7 @@ class TestDriver implements ConnectionDriver
         } else {
             $this->inserts[$table] += count($models);
         }
+        Counter::getInstance()->update(count($models));
     }
 
     /**
