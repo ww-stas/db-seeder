@@ -61,24 +61,24 @@ class ConfigMapper
 
     private function doMap(ClassInfo $classInfo, ?array $config, $resultInstance, $parentKey = null): YamlConfigurable
     {
+        if ($config === null) {
+            $config = [];
+        }
+
         foreach ($classInfo->getFields() as $field) {
             $fieldName = $field->getName();
             //Skip values that doesn't exist in config file but has a default values
-            if (($config !== null && !array_key_exists($fieldName, $config)) || $config === null) {
-                //fallback to defaultValueResolver
+            if (!array_key_exists($fieldName, $config)) {
                 if (!$field->hasDefaultValueResolver()) {
                     continue;
                 }
 
+                //fallback to defaultValueResolver
                 $defaultValueResolver = $field->getDefaultValueResolver();
-                switch ($defaultValueResolver) {
-                    case DefaultValueResolver::PARENT_KEY:
-                        $rawValue = $parentKey;
-                        break;
-                    case DefaultValueResolver::NESTED_LIST:
-                        $rawValue = $config;
-                        break;
-                }
+                $rawValue = match ($defaultValueResolver) {
+                    DefaultValueResolver::PARENT_KEY => $parentKey,
+                    DefaultValueResolver::NESTED_LIST => $config,
+                };
             } else {
                 $rawValue = $config[$fieldName];
             }
@@ -163,7 +163,6 @@ class ConfigMapper
                         continue;
                     }
                     foreach ($config[$fieldName] as $key => $value) {
-//                        $path = $pathFunction($key, $path);
                         $path[] = $key;
                         $validationResult = self::validate($field->getClassInfo(), $value, $path, $validationResult);
                     }
