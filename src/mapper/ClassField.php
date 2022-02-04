@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App;
+namespace App\Mapper;
 
 use App\Attributes\Constructor;
 use App\Resolver\ArgumentResolver;
@@ -16,6 +16,7 @@ class ClassField
     private bool $isPublic = true;
     private string $constructor = Constructor::DEFAULT_EMPTY;
     private bool $hasDefaultValue = false;
+    private ?string $defaultValueResolver = null;
 
     /**
      * @return string
@@ -206,6 +207,34 @@ class ClassField
         $this->hasDefaultValue = $hasDefaultValue;
 
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasDefaultValueResolver(): bool
+    {
+        return $this->defaultValueResolver !== null;
+    }
+
+    /**
+     * @param bool $defaultValueResolver
+     *
+     * @return ClassField
+     */
+    public function setDefaultValueResolver(?string $defaultValueResolver): ClassField
+    {
+        $this->defaultValueResolver = $defaultValueResolver;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getDefaultValueResolver(): ?string
+    {
+        return $this->defaultValueResolver;
     }
 
     public function newInstance($value = null): object

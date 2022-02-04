@@ -24,6 +24,7 @@ abstract class AppCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->getApplication()->setCatchExceptions(false);
         Metric::start("App");
         $filename = $input->getArgument('filename');
 

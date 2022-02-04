@@ -3,6 +3,7 @@
 namespace App;
 
 use App\Config\ModelConfig;
+use App\Mapper\ConfigMapper;
 use PHPUnit\Framework\TestCase;
 
 class ModelGeneratorTest extends TestCase

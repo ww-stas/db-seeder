@@ -7,9 +7,9 @@ class ConfigValidationResult
 
     private array $errors = [];
 
-    public function addError(string $path, $errorMessage): void
+    public function addError(array $path, $errorMessage): void
     {
-        $this->errors[$path] = $errorMessage;
+        $this->errors[$this->getPath($path)] = $errorMessage;
     }
 
     public function isValid(): bool
@@ -23,5 +23,10 @@ class ConfigValidationResult
     public function getErrors(): array
     {
         return $this->errors;
+    }
+
+    private function getPath(array $path): string
+    {
+        return implode(".", $path);
     }
 }

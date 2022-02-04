@@ -1,6 +1,0 @@
-db:
-  host: 127.0.0.1
-  port: '33060'
-  database: test
-  user: test
-  password: test

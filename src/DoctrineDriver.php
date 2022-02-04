@@ -3,15 +3,18 @@
 namespace App;
 
 use App\Config\ModelConfig;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception;
 
 class DoctrineDriver implements ConnectionDriver
 {
-    private \Doctrine\DBAL\Connection $connection;
+    private Connection $connection;
+    private const CHUNK_SIZE = 50;
 
     /**
-     * @param \Doctrine\DBAL\Connection $connection
+     * @param Connection $connection
      */
-    public function __construct(\Doctrine\DBAL\Connection $connection)
+    public function __construct(Connection $connection)
     {
         $this->connection = $connection;
     }
@@ -19,12 +22,14 @@ class DoctrineDriver implements ConnectionDriver
     /**
      * @param Model[] $models
      *
-     * @throws \Doctrine\DBAL\Exception
+     * @throws Exception
      */
     public function insertMany(array $models): void
     {
         $table = $models[0]->getModelName();
-        $chunks = array_chunk($models, 100);
+        $key = "insert to table ".$table;
+        Metric::start($key);
+        $chunks = array_chunk($models, self::CHUNK_SIZE);
         if (empty($chunks)) {
             return;
         }
@@ -35,16 +40,14 @@ class DoctrineDriver implements ConnectionDriver
             /** @var Model[] $chunk */
             $valuesPlaceholder = $this->prepareQuery($columns, $chunk);
             $query = 'INSERT INTO ' . $table . ' (' . implode(', ', $columns) . ')' . ' VALUES ' . $valuesPlaceholder;
-            $key = "insert to table ".$table;
-            Metric::start($key);
             $this->connection->executeStatement($query, $this->flatMap($chunk));
-            Metric::stop($key);
             Counter::getInstance()->update(count($chunk));
         }
+        Metric::stop($key);
     }
 
     /**
-     * @throws \Doctrine\DBAL\Exception
+     * @throws Exception
      */
     public function isTableExists(string $table): bool
     {
@@ -52,7 +55,6 @@ class DoctrineDriver implements ConnectionDriver
 
         return $schemaManager->tablesExist($table);
     }
-
 
     public function select(ModelConfig $model, ?array $condition): array
     {
@@ -72,6 +74,7 @@ class DoctrineDriver implements ConnectionDriver
      */
     private function flatMap(array $models): array
     {
+        Metric::start("flatMap");
         $retVal = [];
         foreach ($models as $model) {
             foreach ($model->getFields() as $field) {
@@ -79,6 +82,7 @@ class DoctrineDriver implements ConnectionDriver
             }
         }
 
+        Metric::stop("flatMap");
         return $retVal;
     }
 
@@ -90,6 +94,7 @@ class DoctrineDriver implements ConnectionDriver
      */
     private function prepareQuery(array $fields, array $models): string
     {
+        Metric::start("prepareQuery");
         $countOfValues = count($fields);
 
         $val = '';
@@ -107,7 +112,7 @@ class DoctrineDriver implements ConnectionDriver
             }
         }
 
+        Metric::stop("prepareQuery");
         return $val;
     }
-
 }

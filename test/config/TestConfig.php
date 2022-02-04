@@ -2,7 +2,7 @@
 
 namespace Test\Config;
 
-use App\ConfigMapper;
+use App\Mapper\ConfigMapper;
 use App\ValidationException;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;

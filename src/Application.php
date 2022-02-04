@@ -4,6 +4,7 @@ namespace App;
 
 use App\Config\AppConfig;
 use App\Context\Context;
+use App\Mapper\ConfigMapper;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use ReflectionException;

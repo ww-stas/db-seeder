@@ -1,0 +1,39 @@
+#Database connection configuration.
+connection:
+  driver: pdo_mysql
+  port: 33060
+  host: 127.0.0.1
+  database: test
+  user: test
+  password: test
+
+#Faker configuration
+faker:
+  localization: en_US
+
+#Models definition section. Describe here all tables and it's columns. j
+models:
+
+  # This and notation below are equals.
+  user:
+    id: faker::uuid
+    name: faker::name
+    email: faker::email
+    passwor: faker::password
+
+  post:
+    table: post
+    columns:
+      id: faker::uuid
+      title: faker::company
+      content: faker::paragraph
+      user_id: $ref::user.id
+      created_at: faker::dateTimeBetween::-1 month|format::Y-m-d H:i:s
+
+# The main section is a seed plan. For this example 10 users will be created and 100 posts for each user.
+seed:
+  user:
+    count: 10
+    foreach:
+      post:
+        count: 100

@@ -4,6 +4,7 @@ namespace App\Config;
 
 use App\Attributes\Collection;
 use App\Attributes\Constructor;
+use App\Attributes\DefaultValueResolver;
 use App\Attributes\Required;
 use App\Context\Dependent;
 use App\DependencyCollection;
@@ -13,6 +14,7 @@ use App\YamlConfigurable;
 class ModelConfig implements YamlConfigurable
 {
     #[Required]
+    #[DefaultValueResolver(resolver: DefaultValueResolver::PARENT_KEY)]
     public string $table;
     /**
      * @var ArgumentResolver[]
@@ -20,6 +22,7 @@ class ModelConfig implements YamlConfigurable
     #[Required]
     #[Collection(class: ArgumentResolver::class)]
     #[Constructor(value: Constructor::STATIC_MAKE)]
+    #[DefaultValueResolver(resolver: DefaultValueResolver::NESTED_LIST)]
     public array $columns;
 
     /**

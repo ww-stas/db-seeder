@@ -1,9 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace App;
+namespace App\Mapper;
 
 use App\Attributes\Collection;
+use App\Attributes\DefaultValueResolver;
 use App\Attributes\Required;
+use App\YamlConfigurable;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionProperty;
@@ -32,6 +34,7 @@ class ClassInfo
             $classField->setName($propertyName);
             $classField->setRequired(self::isRequired($property));
             $classField->setHasDefaultValue($property->hasDefaultValue());
+            $classField->setDefaultValueResolver(self::getDefaultValueResolver($property));
             self::resolveType($property, $classField);
             self::resolveSetter($reflection, $property, $classField);
 
@@ -39,6 +42,19 @@ class ClassInfo
         }
 
         return $instance;
+    }
+
+    private static function getDefaultValueResolver(ReflectionProperty $reflectionProperty): ?string
+    {
+        $attributes = $reflectionProperty->getAttributes(DefaultValueResolver::class);
+        if (!empty($attributes)) {
+            /** @var DefaultValueResolver $attribute */
+            $attribute = $attributes[0]->newInstance();
+
+            return $attribute->getResolver();
+        }
+
+        return null;
     }
 
     private static function getNestedClassInfos(ClassInfo $classInfo): array
@@ -105,7 +121,6 @@ class ClassInfo
         if ($isNested && is_subclass_of($typeName, YamlConfigurable::class)) {
             if ($typeName === $reflectionProperty->class) {
                 //prevent loop on nested elements of the same type
-                //$classField->setClassInfo();
                 return;
             }
             $classField->setClassInfo(static::make($typeName));

@@ -1,8 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace App;
+namespace App\Mapper;
 
+use App\Attributes\DefaultValueResolver;
+use App\ConfigValidationResult;
 use App\Resolver\ArgumentResolver;
+use App\ValidationException;
+use App\YamlConfigurable;
 use JetBrains\PhpStorm\Pure;
 use ReflectionException;
 use Symfony\Component\Yaml\Yaml;
@@ -19,14 +23,15 @@ class ConfigMapper
      *
      * @param class-string<T> $targetClass
      *
-     * @return T
-     *
      * @throws ReflectionException
      * @throws ValidationException
+     * @return T
+     *
      */
     public function mapFromFile(string $targetClass, string $configFile): YamlConfigurable
     {
         $config = Yaml::parseFile($configFile);
+
         return $this->map($targetClass, $config);
     }
 
@@ -43,7 +48,6 @@ class ConfigMapper
     public function map(string $targetClass, array $config): YamlConfigurable
     {
         $instance = new $targetClass;
-
         $classInfo = ClassInfo::make($targetClass);
         $classInfo->fixCircularReferences();
         $validationResult = $this->validate($classInfo, $config);
@@ -55,15 +59,30 @@ class ConfigMapper
         return $this->doMap($classInfo, $config, $instance);
     }
 
-    private function doMap(ClassInfo $classInfo, array $config, $resultInstance): YamlConfigurable
+    private function doMap(ClassInfo $classInfo, ?array $config, $resultInstance, $parentKey = null): YamlConfigurable
     {
         foreach ($classInfo->getFields() as $field) {
             $fieldName = $field->getName();
             //Skip values that doesn't exist in config file but has a default values
-            if (!array_key_exists($fieldName, $config)) {
-                continue;
+            if (($config !== null && !array_key_exists($fieldName, $config)) || $config === null) {
+                //fallback to defaultValueResolver
+                if (!$field->hasDefaultValueResolver()) {
+                    continue;
+                }
+
+                $defaultValueResolver = $field->getDefaultValueResolver();
+                switch ($defaultValueResolver) {
+                    case DefaultValueResolver::PARENT_KEY:
+                        $rawValue = $parentKey;
+                        break;
+                    case DefaultValueResolver::NESTED_LIST:
+                        $rawValue = $config;
+                        break;
+                }
+            } else {
+                $rawValue = $config[$fieldName];
             }
-            $rawValue = $config[$fieldName];
+
             if (!$field->isPrimitive() || $field->isArgumentResolver()) {
                 $targetClassName = $field->getType();
                 if (!$field->isList()) {
@@ -74,7 +93,7 @@ class ConfigMapper
                         if ($field->isArgumentResolver()) {
                             $value[$key] = ArgumentResolver::make($item);
                         } else {
-                            $value[] = $this->doMap($field->getClassInfo(), $item, new $targetClassName);
+                            $value[] = $this->doMap($field->getClassInfo(), $item, new $targetClassName, $key);
                         }
                     }
                 }
@@ -100,24 +119,42 @@ class ConfigMapper
         }
     }
 
-    private function validate(ClassInfo $classInfo, array $config, ?string $parent = null, ?ConfigValidationResult $validationResult = null): ConfigValidationResult
+    private function validate(ClassInfo $classInfo, ?array $config, ?array $parent = [], ?ConfigValidationResult $validationResult = null): ConfigValidationResult
     {
         if (null === $validationResult) {
             $validationResult = new ConfigValidationResult();
         }
 
-        $pathFunction = static fn($key, ?string $parent = null) => null === $parent ? $key : "$parent.$key";
+        $pathFunction = static fn(array $path) => implode(".", $path);
 
         //Check for required fields
         foreach ($classInfo->getFields() as $field) {
             $fieldName = $field->getName();
-            $isFieldExistsInConfig = array_key_exists($fieldName, $config);
+            $isFieldExistsInConfig = $config !== null && array_key_exists($fieldName, $config);
             $isRequired = $field->isRequired();
-            $path = $pathFunction($fieldName, $parent);
+            $path = $parent;
+            $path[] = $fieldName;
 
             if ($isRequired && !$isFieldExistsInConfig) {
-                $validationResult->addError($path, sprintf("Field '%s' is required but not found in the config file", $path));
-                continue;
+                if ($field->hasDefaultValueResolver()) {
+                    $defaultValueResolver = $field->getDefaultValueResolver();
+                    switch ($defaultValueResolver) {
+                        case DefaultValueResolver::PARENT_KEY:
+                            $parentKeyExists = !empty($parent);
+                            if (!$parentKeyExists) {
+                                $validationResult->addError($path, sprintf("Field '%s' is required but not found in the config file", $pathFunction($path)));
+                            }
+                            break;
+                        case DefaultValueResolver::NESTED_LIST:
+                            if (empty($config) || !is_array($config)) {
+                                $validationResult->addError($path, sprintf("Field '%s' is required but not found in the config file", $pathFunction($path)));
+                            }
+                            break;
+                    }
+                } else {
+                    $validationResult->addError($path, sprintf("Field '%s' is required but not found in the config file", $pathFunction($path)));
+                    continue;
+                }
             }
 
             if (false === $field->isPrimitive()) {
@@ -126,7 +163,8 @@ class ConfigMapper
                         continue;
                     }
                     foreach ($config[$fieldName] as $key => $value) {
-                        $path = $pathFunction($key, $path);
+//                        $path = $pathFunction($key, $path);
+                        $path[] = $key;
                         $validationResult = self::validate($field->getClassInfo(), $value, $path, $validationResult);
                     }
                 } else {

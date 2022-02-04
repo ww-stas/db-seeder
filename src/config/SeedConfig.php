@@ -4,6 +4,7 @@ namespace App\Config;
 
 use App\Attributes\Collection;
 use App\Attributes\Constructor;
+use App\Attributes\DefaultValueResolver;
 use App\Attributes\Required;
 use App\Resolver\ArgumentResolver;
 use App\YamlConfigurable;
@@ -26,6 +27,7 @@ class SeedConfig implements YamlConfigurable
      * @var string
      */
     #[Required]
+    #[DefaultValueResolver(resolver: DefaultValueResolver::PARENT_KEY)]
     public string $model;
 
     /**
